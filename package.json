@@ -1,0 +1,75 @@
+{
+  "name": "thinkium-web3js",
+  "version": "1.0.16",
+  "description": "Thinkium JavaScript API, middleware to talk to a thinkium node over RPC",
+  "main": "./index.js",
+  "directories": {
+    "lib": "./lib"
+  },
+  "dependencies": {
+    "bignumber.js": "^8.1.1",
+    "bip39": "^3.0.2",
+    "crypto-js": "^3.1.4",
+    "describe": "^1.2.0",
+    "ethereumjs-util": "^6.1.0",
+    "ethjs-util": "^0.1.6",
+    "mongodb": "^3.1.10",
+    "secp256k1": "^3.7.1",
+    "solc": "^0.5.0",
+    "utf8": "^2.1.1",
+    "xhr2-cookies": "^1.1.0",
+    "xmlhttprequest": "*"
+  },
+  "browser": {
+    "xmlhttprequest": "./lib/utils/browser-xhr.js"
+  },
+  "devDependencies": {
+    "bower": ">=1.4.1",
+    "browserify": ">=10.0",
+    "cached-path-relative": ">=1.0.2",
+    "chai": "^3.5.0",
+    "coveralls": "^3.0.2",
+    "del": ">=2.0.2",
+    "exorcist": "^0.4.0",
+    "gulp": "^4.0.0",
+    "gulp-jshint": ">=1.5.0",
+    "gulp-rename": ">=1.2.0",
+    "gulp-replace": "^0.5.3",
+    "gulp-streamify": "0.0.5",
+    "gulp-uglify": ">=1.2.0",
+    "gulp-uglify-es": "^1.0.4",
+    "handlebars": ">=4.0.14",
+    "hdkey": "^2.0.1",
+    "istanbul": "^0.4.4",
+    "js-yaml": ">=3.13.1",
+    "jshint": "^2.9.6",
+    "lodash": ">=4.17.13",
+    "lodash.merge": ">=4.6.2",
+    "lodash.template": ">=4.5.0",
+    "mocha": "^5.2.0",
+    "sandboxed-module": "^2.0.2",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "scripts": {
+    "build": "gulp",
+    "watch": "gulp watch",
+    "lint": "jshint *.js lib",
+    "test": "mocha; jshint *.js lib",
+    "test-coveralls": "istanbul cover _mocha -- -R spec && cat coverage/lcov.info | coveralls --verbose",
+    "beta": "rm -f package-lock.json && npm version prerelease && npm publish --tag beta"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ThinkiumGroup/web3.js"
+  },
+  "homepage": "https://github.com/ThinkiumGroup/web3.js",
+  "bugs": {
+    "url": "https://github.com/ThinkiumGroup/web3.js/issues"
+  },
+  "keywords": [
+    "thinkium",
+    "javascript",
+    "API"
+  ],
+  "license": "LGPL-3.0"
+}

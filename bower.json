@@ -1,0 +1,44 @@
+{
+  "name": "thinkium-web3js",
+  "version": "1.0.16",
+  "description": "Thinium Compatible JavaScript API",
+  "main": [
+    "./dist/web3.js",
+    "./dist/web3.min.js"
+  ],
+  "dependencies": {
+    "bignumber.js": ">=2.0.0 <=5.0.0",
+    "crypto-js": "~3.1.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ThinkiumGroup/web3.js"
+  },
+  "homepage": "https://github.com/ThinkiumGroup/web3.js",
+  "bugs": {
+    "url": "https://github.com/ThinkiumGroup/web3.js/issues"
+  },
+  "keywords": [
+    "thinkium",
+    "javascript",
+    "API"
+  ],
+  "license": "LGPL-3.0",
+  "ignore": [
+    "example",
+    "lib",
+    "node_modules",
+    "package.json",
+    "package.js",
+    ".versions",
+    ".bowerrc",
+    ".editorconfig",
+    ".gitignore",
+    ".jshintrc",
+    ".npmignore",
+    ".travis.yml",
+    "gulpfile.js",
+    "index.js",
+    "**/*.txt"
+  ]
+}

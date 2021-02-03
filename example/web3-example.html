@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="../dist/web3.min.js"></script>
+    <script type="text/javascript">
+        let Web3 = require('web3');
+        let web3 = new Web3();
+
+
+        function convertAddress() {
+            console.log("====convertAddress===");
+            let address = web3.Iban.toAddress("TH93112A8NT0RIRPIXR7IXJBB1U0ZBXEB1K");
+            let address2 = web3.Iban.fromAddress("0x08d04fc4513e27854ac19f16b9b8cb8d564e2c68").toString();
+            console.log(address);
+            console.log(address2);
+
+            document.getElementById('address').innerText = 'address: ' + address;
+            document.getElementById('thAddress').innerText = 'thAddress: ' + address2;
+        }
+    </script>
+</head>
+<body style="padding-left: 200px">
+<h1>TUKE</h1>
+<button type="button" onClick="convertAddress();">convertAddress</button>
+</br>
+<p id="address"></p>
+<p id="thAddress"></p>
+</body>
+</html>
+
