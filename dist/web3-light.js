@@ -1834,8 +1834,7 @@ function toBuffer(v) {
         } else if (typeof v === 'string') {
             if (ethjsUtil.isHexString(v)) {
                 v = Buffer.from(ethjsUtil.padToEven(ethjsUtil.stripHexPrefix(v)), 'hex');
-            }
-            else {
+            } else {
                 v = Buffer.from(v);
             }
         } else if (typeof v === 'number') {
@@ -1925,6 +1924,22 @@ function sign(msgHash, privateKey) {
     return "0x" + sig.signature.slice(0, 64).toString('hex') + (sig.recovery + 27).toString(16);
 }
 
+function verify(hash, signature, publicKey) {
+    if (typeof hash !== 'string') {
+        return false;
+    }
+    if (typeof signature !== 'string') {
+        return false;
+    }
+    if (typeof publicKey !== 'string') {
+        return false;
+    }
+    return secp256k1.verify(
+        new Buffer.from(ethjsUtil.stripHexPrefix(hash), 'hex'),
+        new Buffer.from(ethjsUtil.stripHexPrefix(signature), 'hex').slice(0, 64),
+        new Buffer.from(ethjsUtil.stripHexPrefix(publicKey), 'hex'));
+}
+
 function nodeSign(msgHash, privateKey) {
     const sig = secp256k1.sign(msgHash, privateKey);
     let v = (sig.recovery + 27);
@@ -1941,6 +1956,7 @@ module.exports = {
     hash256,
     hash256Buffer,
     sign,
+    verify,
     nodeSign,
 };
 
@@ -2049,21 +2065,6 @@ module.exports = {
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
  */
-
-/**
- * Utils
- *
- * @module utils
- */
-
-/**
- * Utility functions
- *
- * @class [utils] utils
- * @constructor
- */
-
-
 var BigNumber = require('bignumber.js');
 var cipher = require('./cipher.js');
 var utf8 = require('utf8');
@@ -2715,8 +2716,6 @@ var RequestManager = require('./web3/requestmanager');
 var Iban = require('./web3/iban');
 var CashCheque = require('./utils/cash-cheque');
 var ABI = require('./web3/abi');
-
-
 var Thk = require('./web3/methods/thk');
 var Eth = require('./web3/methods/eth');
 var DB = require('./web3/methods/db');
@@ -2777,6 +2776,7 @@ Web3.prototype.reset = function (keepIsSyncing) {
     this.settings = new Settings();
 };
 
+Web3.prototype.cipher = cipher;
 Web3.prototype.BigNumber = BigNumber;
 Web3.prototype.toHex = utils.toHex;
 Web3.prototype.toAscii = utils.toAscii;
@@ -2797,7 +2797,6 @@ Web3.prototype.padRight = utils.padRight;
 Web3.prototype.Iban = Iban;
 Web3.prototype.CashCheque = CashCheque;
 Web3.prototype.ABI = ABI;
-
 
 Web3.prototype.hash256 = function (string, options) {
     return '0x' + cipher.hash256(string, options);
@@ -4905,6 +4904,7 @@ SolidityFunction.prototype.toPayload = function (args) {
     this.validateArgs(args);
     options.from = this._thk.defaultAddress;
     options.value = this._thk.getVal();
+    options.gasLimit = this._thk.getGasLimit();
     options.to = this._address;
     options.input = '0x' + this.signature() + coder.encodeParams(this._inputTypes, args);
     return {
@@ -4917,7 +4917,7 @@ SolidityFunction.prototype.toPayload = function (args) {
         value: options.value || '0',
         input: options.input,
         useLocal: false,
-        extra: new Buffer.from(JSON.stringify({gas: 6000000})).toString('hex')
+        extra: new Buffer.from(JSON.stringify({gas: options.gasLimit || 50000})).toString('hex')
     };
 };
 
@@ -4970,8 +4970,7 @@ SolidityFunction.prototype.call = function () {
         var unpacked = null;
         try {
             unpacked = self.unpackOutput(output["out"]);
-        }
-        catch (e) {
+        } catch (e) {
             error = e;
         }
 
@@ -6605,6 +6604,7 @@ function Thk(web3) {
     this._requestManager = web3._requestManager;
     this._curCaller = null;
     this._value = null;
+    this._gasLimit = null;
     this.defaultPrivateKey = null;
     this.defaultChainId = '2';
     this.defaultAddress = null;
@@ -6800,6 +6800,14 @@ Thk.prototype.getVal = function () {
     return this._value
 };
 
+Thk.prototype.setGasLimit = function (val) {
+    this._gasLimit = val
+};
+
+Thk.prototype.getGasLimit = function () {
+    return this._gasLimit
+};
+
 Thk.prototype.filter = function (options, callback, filterCreationErrorCallback) {
     return new Filter(options, 'thk', this._requestManager, watches.thk(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
 };
@@ -6816,45 +6824,51 @@ Thk.prototype.isSyncing = function (callback) {
     return new IsSyncing(this._requestManager, callback);
 };
 
-Thk.prototype.signTransaction = function (transactionDict, privateKey) {
-    let to = '', from = '';
-    if (transactionDict["to"].length > 2 && web3Util.isAddress(transactionDict["to"])) {
-        to = transactionDict["to"].substring(2)
-    }
+Thk.prototype.hashTransaction = function (transactionDict) {
+    let from = '', to = '';
     if (web3Util.isAddress(transactionDict["from"])) {
         from = transactionDict["from"].substring(2)
     } else {
-        throw new Error('invalid address');
+        throw new Error('invalid from address');
     }
-
+    if (web3Util.isAddress(transactionDict["to"])) {
+        to = transactionDict["to"].substring(2)
+    }
     let input = '';
     if (transactionDict["input"] !== "") {
         input = transactionDict["input"].substring(0, 2) === '0x' ? transactionDict["input"].substring(2) : transactionDict["input"]
     }
-
-    let useLocal_str = "0";
+    let useLocal = "0";
     if (transactionDict["useLocal"]) {
-        useLocal_str = "1"
+        useLocal = "1"
     } else {
-        transactionDict["useLocal"] = false
+        transactionDict["useLocal"] = false;
     }
-
-    if (this._value != null) {
-        transactionDict["value"] = this._value;
-    }
-    let signStr = transactionDict["chainId"] + "-" + from + "-" +
-        to + "-" + transactionDict["nonce"] + "-" +
-        useLocal_str + "-" + transactionDict["value"] + "-" + input;
     if (!transactionDict["extra"]) {
         transactionDict["extra"] = ''
     }
-    signStr = signStr + '-' + transactionDict["extra"];
+    let params = [];
+    params.push(transactionDict["chainId"])
+    params.push(from);
+    params.push(to);
+    params.push(transactionDict["nonce"]);
+    params.push(useLocal);
+    params.push(transactionDict["value"]);
+    params.push(input);
+    params.push(transactionDict["extra"]);
+    return cipher.hash256(params.join("-"))
+}
 
-    let hash = cipher.hash256(signStr);
+Thk.prototype.signTransaction = function (transactionDict, privateKey) {
+    let hash = this.hashTransaction(transactionDict);
     let signBytes = new Buffer.from(hash, 'hex');
     transactionDict['sig'] = cipher.sign(signBytes, privateKey);
     transactionDict['pub'] = '0x' + cipher.privateToPublic(privateKey).toString('hex');
     return transactionDict
+};
+
+Thk.prototype.verifyTransaction = function (transactionDict) {
+    return cipher.verify(this.hashTransaction(transactionDict), transactionDict["sig"], transactionDict["pub"])
 };
 
 Thk.prototype.nodeSign = function (transactionDict, privateKey) {
@@ -7243,7 +7257,7 @@ HttpProvider.prototype.prepareRequest = function (async) {
     } else {
         request = new XMLHttpRequest();
     }
-    request.withCredentials = true;
+    // request.withCredentials = true;
 
     request.open('POST', this.host, async);
     if (this.user && this.password) {

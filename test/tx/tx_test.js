@@ -15,6 +15,7 @@ _toAddress = testEnv._test_wallet.address;
 describe('tx', function () {
     this.timeout(100000);
     it('send-tx', done => {
+        web3.thk.setGasLimit(50000);
         const account = web3.thk.GetAccount(web3.thk.defaultChainId, web3.thk.defaultAddress);
         console.log("account :", account);
 
@@ -30,9 +31,16 @@ describe('tx', function () {
             value: value.toString(10),
             input: ""
         };
+        console.log(web3.thk.verifyTransaction(tx));
 
         let signedTx = web3.thk.signTransaction(tx, web3.thk.defaultPrivateKey);
         console.log("signedTx:", signedTx);
+
+        let hash = web3.thk.hashTransaction(signedTx);
+        let res = web3.thk.verifyTransaction(signedTx);
+
+        console.log(res);
+        console.log(web3.cipher.verify(hash, signedTx["sig"], signedTx["pub"]));
 
         let txRes = web3.thk.SendTx(signedTx);
         console.log("sendTx response:", txRes);

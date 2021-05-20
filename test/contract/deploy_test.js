@@ -92,6 +92,7 @@ describe('contract-test', function () {
 
 function callHelloContract(contractAbi, contractAddress) {
     const helloWorld = web3.thk.contract(contractAbi).at(contractAddress, null);
+    web3.thk.setGasLimit(1000000)
 
     const hash = helloWorld.setNickname("world");
     console.log("setNickname.hash:", hash);

@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 const testEnv = require('../common/env-test');
 const cipher = require('../../lib/utils/cipher');
+const web3 = testEnv.web3;
+
 const bip39 = require('bip39');
 const hdkey = require('hdkey');
 
 describe('test-cipher', function () {
     this.timeout(100000);
+    it('hash', done => {
+        let signStr = "1-f167a1c5c5fab6bddca66118216817af3fa86827-5dfcfc6f4b48f93213dad643a50228ff873c15b9-853-0-10000000000000000000000--7b22676173223a363030303030307d";
+        let hash = cipher.hash256(signStr);
+        console.log(hash)
+        done()
+    });
+
     it('gen key', done => {
         let mnemonic = bip39.generateMnemonic();
         console.log(mnemonic);
@@ -43,10 +52,20 @@ describe('test-cipher', function () {
 
         const nodeId = publicKey.slice(1).toString('hex');
         console.log(nodeId);
-
-
         done()
     });
+
+    it('pub-sign-verify', done => {
+        let privateKey = testEnv._test_wallet.privateKey;
+        let publicKey = cipher.privateToPublic(privateKey).toString('hex');
+
+        let hash = web3.cipher.hash256("123456");
+        let signature = web3.cipher.sign(new Buffer.from(hash, 'hex'), privateKey);
+        const res = web3.cipher.verify(hash, signature, publicKey) // all params are hex string
+        console.log(res);
+        done()
+    });
+
     it('address', done => {
         var address = cipher.privateToAddress(testEnv._test_wallet.privateKey);
         console.log(address.toString('hex'));
